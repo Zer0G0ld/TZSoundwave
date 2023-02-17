@@ -13,6 +13,13 @@
 {prefixo}stop
 ```
 
+## Instalação:
+<p>Caso queira instalar segue o passo a baixo: </p>
+```
+$ git clone https://github.com/Odin-Hat/Soundwave
+$ cd SoundWave
+```
+
 ### Você deve mudar o que?
 ```
 TOKEN = 'your_token_here'
@@ -57,4 +64,4 @@ Soundwave: Cabô a música!
 
 ## Criador e Licença:
 <p>Autor: CodeOpen / Odin-Hat</p>
-<p>Licença: </p>
+<p>Licença:  MIT license</p>
