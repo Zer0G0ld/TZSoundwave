@@ -15,10 +15,18 @@
 
 ## Instalação:
 <p>Caso queira instalar segue o passo a baixo: </p>
+
+### Linux e Termux:
 ```
+$ apt update && apt upgrade -y
+$ apt install git && apt install python -y
 $ git clone https://github.com/Odin-Hat/Soundwave
 $ cd SoundWave
+$ python main.py
 ```
+
+### Windows:
+> **Nota: ** Desculpe-me eu não sei como faço isso pelo windows "quem souber por favor não hesite em atualizar esse `README.md`, abra uma `PULL` ou então uma `ISSUES` (para ser sincero eu não manjo disso ainda)"
 
 ### Você deve mudar o que?
 ```
