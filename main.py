@@ -1,20 +1,48 @@
+import os
 import discord
 import asyncio
-import youtube_dl
+
 from discord import Intents
 from discord.ext import commands
+from discord import FFmpegPCMAudio
+from discord import PCMVolumeTransformer
+from discord import Member
+from discord import Guild
+from dotenv import load_dotenv
 
-TOKEN = 'seu_token'
+import nacl
+import youtube_dl
+
+load_dotenv()
+
+TOKEN = os.getenv('TOKEN')
 PREFIX = '!'
-intents = Intents.default()                             intents.members = True                                  client = commands.Bot(command_prefix=PREFIX, intents=intents)
+intents = Intents.default()
+intents.members = True
+bot = commands.Bot(command_prefix=PREFIX, intents=intents)
 
 queue = {}
 
-@client.event
+@bot.event
 async def on_ready():
-    print('Bot está On-line!')
+    print(f"=================================")
+    print(f"Estou Online como {bot.user.name}")
+    print(f"=================================")
 
-@client.command()
+@bot.event
+async def on_message(message):
+    print(f"Menssagem Recebida: {message.content} ") # Apenas para depuração, fora disso é anti ético
+
+    if not message.author.bot:  # Certifica-se de que o autor da mensagem não seja um bot
+        user_id = message.author.id
+    await bot.process_commands(message)
+
+
+@bot.command()
+async def oi(ctx):
+    await ctx.send(f"Olá!")
+
+@bot.command()
 async def play(ctx, *, url):
     voice_channel = ctx.author.voice.channel
     if voice_channel is None:
@@ -28,29 +56,23 @@ async def play(ctx, *, url):
     server = ctx.message.guild
     voice_state = server.voice_client
 
-    ytdl_options = {'format': 'bestaudio'}
-    with youtube_dl.YoutubeDL(ytdl_options) as ydl:
-        info = ydl.extract_info(url, download=False)
-        url = info['formats'][0]['url']
-        title = info['title']
-
     if server.id not in queue:
         queue[server.id] = []
 
-    queue[server.id].append((title, url))
+    queue[server.id].append((url, url))  # Simplesmente adicionando a URL duas vezes para simular o título e a URL
 
     if voice_state.is_playing():
         return
     else:
         await play_song(server.id, voice_state, ctx)
 
-@client.command()
+@bot.command()
 async def skip(ctx):
     voice_state = ctx.message.guild.voice_client
     if voice_state.is_playing():
         voice_state.stop()
 
-@client.command()
+@bot.command()
 async def stop(ctx):
     voice_state = ctx.message.guild.voice_client
     if voice_state.is_playing():
@@ -61,12 +83,24 @@ async def play_song(server, voice_state, ctx):
     if len(queue[server]) == 0:
         return
 
-    voice_state.play(discord.FFmpegPCMAudio(queue[server][0][1], **FFMPEG_OPTIONS),
-                     after=lambda e: asyncio.run_coroutine_threadsafe(play_song(server, voice_state, ctx), client.loop))
-    voice_state.source = discord.PCMVolumeTransformer(voice_state.source)
-    voice_state.source.volume = 0.5
+    url = queue[server][0][1]
 
+    # Transmitir a música usando FFmpegPCMAudio com a URL fornecida
+    voice_state.play(discord.FFmpegPCMAudio(url), after=lambda e: asyncio.run_coroutine_threadsafe(play_song(server, voice_state, ctx), bot.loop))
+
+    # Após tocar a música, remover a música da fila
     del queue[server][0]
-    await ctx.send(f'Playing {voice_state.source.title}')
+    
+    # Enviar uma mensagem de reprodução
+    await ctx.send(f'Playing {url}')
 
-client.run("TOKEN")
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send("Comando não encontrado.")
+    elif isinstance(error, commands.MissingPermissions):
+        await ctx.send("Desculpe, você não tem permissão para usar este comando.")
+    else:
+        await ctx.send("Ocorreu um erro ao executar este comando.")
+
+bot.run(TOKEN)
