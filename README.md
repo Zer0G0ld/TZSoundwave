@@ -16,6 +16,43 @@
 ## Instalação:
 <p>Caso queira instalar segue o passo a baixo: </p>
 
+## Instalação via Git
+
+```git
+git clone https://github.com/Zer0G0ld/Zero
+```
+
+# Ambiente Virtual - AV
+Criando ...
+```python
+python3 -m venv venv
+
+```
+
+Ativando no Linux ou MacOS
+```linux
+source venv/bin/activate
+
+```
+
+Ativando no Windows
+```cmd
+.\venv\Scripts\Activate
+```
+
+Desativando ...
+```linux
+deactivate
+
+```
+
+### Instalando dependências
+
+```
+pip install -r requirements.txt
+```
+
+
 ### Linux e Termux:
 ```
 $ apt update && apt upgrade -y
