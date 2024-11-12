@@ -1,16 +1,10 @@
 import os
 import discord
 import asyncio
-
 from discord import Intents
 from discord.ext import commands
 from discord import FFmpegPCMAudio
-from discord import PCMVolumeTransformer
-from discord import Member
-from discord import Guild
 from dotenv import load_dotenv
-
-import nacl
 import youtube_dl
 
 load_dotenv()
@@ -31,12 +25,10 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    print(f"Menssagem Recebida: {message.content} ") # Apenas para depuração, fora disso é anti ético
+    print(f"Mensagem Recebida: {message.content}")  # Apenas para depuração, fora disso é antiético
 
     if not message.author.bot:  # Certifica-se de que o autor da mensagem não seja um bot
-        user_id = message.author.id
-    await bot.process_commands(message)
-
+        await bot.process_commands(message)
 
 @bot.command()
 async def oi(ctx):
@@ -59,12 +51,43 @@ async def play(ctx, *, url):
     if server.id not in queue:
         queue[server.id] = []
 
-    queue[server.id].append((url, url))  # Simplesmente adicionando a URL duas vezes para simular o título e a URL
+    song = await download_song(url)
+    queue[server.id].append(song)
 
-    if voice_state.is_playing():
-        return
-    else:
+    if not voice_state.is_playing():
         await play_song(server.id, voice_state, ctx)
+
+async def download_song(url):
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'outtmpl': 'downloads/%(id)s.%(ext)s',
+        'quiet': True,
+    }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        url2 = info['formats'][0]['url']
+        return url2
+
+async def play_song(server, voice_state, ctx):
+    if len(queue[server]) == 0:
+        return
+
+    song_url = queue[server][0]
+
+    # Transmitir a música usando o URL obtido do YouTube
+    voice_state.play(FFmpegPCMAudio(song_url), after=lambda e: asyncio.run_coroutine_threadsafe(play_song(server, voice_state, ctx), bot.loop))
+
+    # Após tocar a música, remover a música da fila
+    del queue[server][0]
+    
+    # Enviar uma mensagem de reprodução
+    await ctx.send(f'Estou tocando: {song_url}')
 
 @bot.command()
 async def skip(ctx):
@@ -78,21 +101,6 @@ async def stop(ctx):
     if voice_state.is_playing():
         voice_state.stop()
     await voice_state.disconnect()
-
-async def play_song(server, voice_state, ctx):
-    if len(queue[server]) == 0:
-        return
-
-    url = queue[server][0][1]
-
-    # Transmitir a música usando FFmpegPCMAudio com a URL fornecida
-    voice_state.play(discord.FFmpegPCMAudio(url), after=lambda e: asyncio.run_coroutine_threadsafe(play_song(server, voice_state, ctx), bot.loop))
-
-    # Após tocar a música, remover a música da fila
-    del queue[server][0]
-    
-    # Enviar uma mensagem de reprodução
-    await ctx.send(f'Playing {url}')
 
 @bot.event
 async def on_command_error(ctx, error):
